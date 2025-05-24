@@ -1,0 +1,5 @@
+numpy==2.2.5
+polars==1.29.0
+matplotlib==3.10.1
+great-tables==0.17.0
+selenium>=4.32.0
