@@ -11,9 +11,10 @@
 ```
 ./src
 ├── mango_blog
-│   ├── analysis.py     | main analysis functions
-│   ├── app.py          | marimo app
-│   ├── constants.py    | constant variables and paths
+│   ├── analysis.py     | main analysis routine producing the figures
+│   ├── app_marimo.py   | marimo app
+│   ├── app.py          | Shiny app (dashboard)
+│   ├── constants.py    | constant variables
 │   ├── hashtags.py     | main analysis functions
 │   └── plots.py        | plotting functions
 ```
@@ -30,4 +31,3 @@ pip install -e .
 ```python
 python -m mango_blog.analysis # stores results to ./data/outputs
 ```
-
