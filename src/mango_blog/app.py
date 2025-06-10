@@ -1,18 +1,50 @@
 from plots import plot_gini_plotly, plot_bar_plotly, plot_users_plotly, FS
-from hashtags import secondary_analyzer
+from hashtags import secondary_analyzer, COL_AUTHOR_ID, COL_TIME, COL_POST
 from matplotlib import pyplot as plt
 import polars as pl
 import numpy as np
+from dotenv import dotenv_values
+from pathlib import Path
 
 from shiny import App, ui, render, reactive
 from shinywidgets import render_widget, output_widget
 
-DATA = "/Users/kriarm/project/mango-blog/data/outputs/primary_output.parquet"
+data_dir = dotenv_values()["DATA_PATH"]
+DATA_RAW = Path(data_dir, "inputs", "confirmed_russia_troll_tweets.csv")
+DATA = Path(data_dir, "outputs", "primary_output.parquet")
 
 # https://icons.getbootstrap.com/icons/question-circle-fill/
 question_circle_fill = ui.HTML(
     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle-fill mb-1" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/></svg>'
 )
+
+
+def load_raw_data_subset(time_start, time_end, user_id, hashtag):
+    lf = pl.scan_csv(
+        source=DATA_RAW,
+        skip_rows=3,  # we know this in advance
+    )
+
+    df_ = (
+        lf.rename(
+            {
+                "Twitter screenname": COL_AUTHOR_ID,
+                "Date tweet sent": COL_TIME,
+                "Tweet text": COL_POST,
+            }
+        )
+        .select(pl.col(COL_AUTHOR_ID), pl.col(COL_TIME), pl.col(COL_POST))
+        .with_columns(pl.col(COL_TIME).str.to_datetime("%m/%d/%Y %H:%M"))
+        .with_columns(pl.col(COL_TIME).dt.replace_time_zone("UTC"))
+        .filter(
+            pl.col(COL_AUTHOR_ID) == user_id,
+            pl.col(COL_TIME).is_between(lower_bound=time_start, upper_bound=time_end),
+            pl.col(COL_POST).str.contains(hashtag),
+        )
+        .sort(by=COL_TIME)
+    ).collect()
+
+    return df_
 
 
 def load_primary_output():
@@ -100,21 +132,29 @@ page_dependencies = ui.tags.head(
 
 app_ui = ui.page_fluid(
     page_dependencies,
-    ui.panel_title(ui.h4("Model Dashboard")),
-    ui.layout_columns(
-        ui.card(
-            ui.card_header(
-                "Full time scale analysis ",
-                ui.tooltip(
-                    ui.tags.span(
-                        question_circle_fill, style="cursor: help; font-size: 14px;"
+    ui.panel_title(ui.h4("Hashtag analysis dashboard")),
+    ui.accordion(
+        ui.accordion_panel(
+            "",
+            [
+                ui.card(
+                    ui.card_header(
+                        "Full time scale analysis ",
+                        ui.tooltip(
+                            ui.tags.span(
+                                question_circle_fill,
+                                style="cursor: help; font-size: 14px;",
+                            ),
+                            "This analysis shows the gini coefficient over the entire dataset. Select specific timepoints below to explore narrow time windows",
+                            placement="top",
+                        ),
                     ),
-                    "This analysis shows the gini coefficient over the entire dataset. Select specific timepoints below to explore narrow time windows",
-                    placement="top",
-                ),
-            ),
-            ui.input_checkbox("smooth_checkbox", "Show smoothed line", value=False),
-            output_widget("line_plot", height="300px"),
+                    ui.input_checkbox(
+                        "smooth_checkbox", "Show smoothed line", value=False
+                    ),
+                    output_widget("line_plot", height="300px"),
+                )
+            ],
         )
     ),
     ui.hr(),
@@ -148,11 +188,16 @@ app_ui = ui.page_fluid(
         ),
     ),
     ui.hr(),
-    ui.h4("Data Preview"),
     ui.card(
-        ui.card_header("Russian trolls dataset"),
-        ui.output_data_frame("table"),
-        height="400px",
+        ui.card_header("Tweets"),
+        ui.input_selectize(
+            id="user_picker",
+            label="Show tweets for user:",
+            choices=[],
+            width="100%",
+        ),
+        ui.output_text(id="tweets_title"),
+        ui.output_data_frame("tweets"),
     ),
     title="Hashtag analysis dashboard",
 )
@@ -192,9 +237,20 @@ def server(input, output, session):
             session=session,
         )
 
-    @render.data_frame
-    def table():
-        return render.DataGrid(df.head(10))
+    @reactive.effect
+    def update_user_choices():
+        df_users = select_users(
+            secondary_analysis(), selected_hashtag=input.hashtag_picker()
+        ).sort("count", descending=True)
+
+        users = df_users["users_all"].to_list()
+
+        ui.update_selectize(
+            "user_picker",
+            choices=users,
+            selected=users[0] if users else None,
+            session=session,
+        )
 
     @render_widget
     def line_plot():
@@ -240,8 +296,33 @@ def server(input, output, session):
             return fig
 
     @render.text
-    def value():
-        return f"{type(input.date_picker())}"
+    def tweets_title():
+        timewindow = get_selected_datetime()
+        timewindow_end = timewindow + time_step
+        format_code = "%B %d, %Y"
+        dates_formatted = f"{timewindow.strftime(format_code)} - {timewindow_end.strftime(format_code)}"
+
+        return "Showing posts in time window: " + dates_formatted
+
+    @render.data_frame
+    def tweets():
+        timewindow = get_selected_datetime()
+
+        df_posts = load_raw_data_subset(
+            time_start=timewindow,
+            time_end=timewindow + time_step,
+            user_id=input.user_picker(),
+            hashtag=input.hashtag_picker(),
+        )
+
+        # format strings
+        df_posts = df_posts.with_columns(
+            pl.col(COL_TIME).dt.strftime("%B %d, %Y %I:%M %p")
+        )
+
+        df_posts = df_posts.drop(pl.col(COL_AUTHOR_ID))
+
+        return render.DataGrid(df_posts, width="100%")
 
 
 app = App(app_ui, server)
