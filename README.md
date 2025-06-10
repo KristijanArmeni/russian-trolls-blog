@@ -28,6 +28,15 @@ pip install -e .
 
 ## Run the analysis
 
+For example, if editable install and data are under `./data` and the figures hould be stored in `data/outputs`:
+
 ```python
-python -m mango_blog.analysis # stores results to ./data/outputs
+python -m mango_blog.analysis "./data/inputs/confirmed_russia_troll_tweets.csv" "./data/outputs"
+```
+
+If not installed
+```python
+```python
+python src/mango_blog/analysis "./data/inputs/confirmed_russia_troll_tweets.csv" "./data/outputs"
+```
 ```
