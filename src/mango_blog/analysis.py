@@ -16,12 +16,22 @@ from .hashtags import (
     OUTPUT_COL_TIMESPAN,
 )
 from .plots import plot_gini_annot, plot_bar, FS
-from .constants import DATA_PATH, OUTPUT_PATH, DATASET_FNAME
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "input_csv", type=str, help="Path to the russian trolls dataset"
+    )
+    parser.add_argument("output_path", type=str, help="Folder to store the data to")
+
+    args = parser.parse_args()
+
     lf = pl.scan_csv(
-        source=Path(DATA_PATH, "inputs", DATASET_FNAME),
-        skip_rows=3,
+        source=args.input_csv,
+        skip_rows=3,  # we know this in advance
     )
 
     df = (
@@ -46,7 +56,11 @@ if __name__ == "__main__":
 
     parquet_fn = "primary_output.parquet"
     print(f"Saving {parquet_fn}")
-    df_out.write_parquet(Path(OUTPUT_PATH, parquet_fn))
+    df_out.write_parquet(Path(args.output_path, parquet_fn))
+
+    json_fn = "primary_output.json"
+    print(f"Saving {json_fn}")
+    df_out.write_json(Path(args.output_path, json_fn))
 
     # select March 22
     TIMEPOINT_STR = datetime(2016, 3, 22, 6, 59, 00)
@@ -60,11 +74,11 @@ if __name__ == "__main__":
     # FIGURE 1
     fig = plot_gini_annot(df=df_out, x_selected=idx)
 
-    fn_fig1_png = Path(OUTPUT_PATH, "fig1_gini_time.png")
+    fn_fig1_png = Path(args.output_path, "fig1_gini_time.png")
     print(f"Saving {fn_fig1_png}")
     fig.savefig(fn_fig1_png, dpi=300)
 
-    fn_fig1_svg = Path(OUTPUT_PATH, "fig1_gini_time.svg")
+    fn_fig1_svg = Path(args.output_path, "fig1_gini_time.svg")
     print(f"Saving {fn_fig1_svg}")
     fig.savefig(fn_fig1_svg, dpi=300)
 
@@ -72,8 +86,8 @@ if __name__ == "__main__":
 
     table1 = make_table1(russ_trol_df=df)
 
-    fn_table1_png = Path(OUTPUT_PATH, "dataset_summary_table.png")
-    fn_table1_pdf = Path(OUTPUT_PATH, "dataset_summary_table.pdf")
+    fn_table1_png = Path(args.output_path, "dataset_summary_table.png")
+    fn_table1_pdf = Path(args.output_path, "dataset_summary_table.pdf")
     print(f"Saving {fn_table1_png}")
     table1.save(fn_table1_png, web_driver="firefox", scale=2)
 
@@ -142,8 +156,8 @@ if __name__ == "__main__":
         fontweight="semibold",
     )
 
-    fn_barplot_png = Path(OUTPUT_PATH, "fig2_barplots.png")
-    fn_barplot_svg = Path(OUTPUT_PATH, "fig2_barplots.svg")
+    fn_barplot_png = Path(args.output_path, "fig2_barplots.png")
+    fn_barplot_svg = Path(args.output_path, "fig2_barplots.svg")
 
     print(f"Saving {fn_barplot_png}")
     fig.savefig(fn_barplot_png, dpi=300)
@@ -170,10 +184,10 @@ if __name__ == "__main__":
         .fmt_datetime(columns="time", date_style="m_day_year", time_style="h_m_p")
     )
 
-    fn_table_tweets_png = Path(OUTPUT_PATH, "tweets_table.png")
+    fn_table_tweets_png = Path(args.output_path, "tweets_table.png")
     print(f"Saving {fn_table_tweets_png}")
     table_tweets.save(fn_table_tweets_png, web_driver="firefox", scale=2)
 
-    fn_table_tweets_pdf = Path(OUTPUT_PATH, "tweets_table.pdf")
+    fn_table_tweets_pdf = Path(args.output_path, "tweets_table.pdf")
     print(f"Saving {fn_table_tweets_pdf}")
     table_tweets.save(fn_table_tweets_pdf, web_driver="firefox", scale=2)
