@@ -7,6 +7,7 @@
 #     "numpy==2.2.5",
 #     "polars==1.29.0",
 #     "mango-blog==0.1.0",
+#     "python-dotenv==1.1.0",
 # ]
 #
 # [tool.uv.sources]
@@ -61,16 +62,16 @@ def _():
 
 
 @app.cell
-def _(DATA_PATH):
-    DATA_PATH
-    return
-
-
-@app.cell
 def _():
     # constants
     FS = 12
     return (FS,)
+
+
+@app.cell
+def _(DATA_PATH):
+    DATA_PATH
+    return
 
 
 @app.cell
