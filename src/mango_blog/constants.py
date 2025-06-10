@@ -1,5 +1,7 @@
+import os
 from pathlib import Path
 from datetime import datetime
+from dotenv import load_dotenv
 
 DATES = {
     "brussels": datetime(year=2016, month=3, day=22),
@@ -15,7 +17,8 @@ DATES2FORMATTED = {
     "first_debate": "First presidential debate",
 }
 
-ROOT = Path("..", "..")
-DATA_PATH = Path(ROOT, "data")
+load_dotenv()
+
+DATA_PATH = os.getenv("DATA_PATH")
 OUTPUT_PATH = Path(DATA_PATH, "outputs")
 DATASET_FNAME = "confirmed_russia_troll_tweets.csv"
