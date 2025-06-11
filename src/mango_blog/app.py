@@ -10,7 +10,7 @@ from shiny import App, ui, render, reactive
 from shinywidgets import render_widget, output_widget
 
 data_dir = dotenv_values()["DATA_PATH"]
-DATA_RAW = Path(data_dir, "inputs", "confirmed_russia_troll_tweets.csv")
+DATA_RAW = Path(data_dir, "inputs", "confirmed_russia_troll_tweets.parquet")
 DATA = Path(data_dir, "outputs", "primary_output.parquet")
 
 # https://icons.getbootstrap.com/icons/question-circle-fill/
@@ -20,10 +20,7 @@ question_circle_fill = ui.HTML(
 
 
 def load_raw_data_subset(time_start, time_end, user_id, hashtag):
-    lf = pl.scan_csv(
-        source=DATA_RAW,
-        skip_rows=3,  # we know this in advance
-    )
+    lf = pl.scan_parquet(source=DATA_RAW)
 
     df_ = (
         lf.rename(
