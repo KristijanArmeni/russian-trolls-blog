@@ -36,7 +36,5 @@ python -m mango_blog.analysis "./data/inputs/confirmed_russia_troll_tweets.csv" 
 
 If not installed
 ```python
-```python
 python src/mango_blog/analysis "./data/inputs/confirmed_russia_troll_tweets.csv" "./data/outputs"
-```
 ```
