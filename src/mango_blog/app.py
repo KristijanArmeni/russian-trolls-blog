@@ -142,7 +142,7 @@ app_ui = ui.page_fluid(
                                 question_circle_fill,
                                 style="cursor: help; font-size: 14px;",
                             ),
-                            "This analysis shows the gini coefficient over the entire dataset. Select specific timepoints below to explore narrow time windows",
+                            "This analysis shows the gini coefficient over the entire dataset. Select specific timepoints below to explore narrow time windows.",
                             placement="top",
                         ),
                     ),
@@ -154,13 +154,22 @@ app_ui = ui.page_fluid(
             ],
         )
     ),
-    ui.hr(),
     ui.layout_columns(
         ui.card(
-            ui.card_header("Most frequent hashtags"),
+            ui.card_header(
+                "Most frequently used hashtags ",
+                ui.tooltip(
+                    ui.tags.span(
+                        question_circle_fill,
+                        style="cursor: help; font-size: 14px;",
+                    ),
+                    "Select a date to display the hashtags that users posted most frequently in the time period starting with that date.",
+                    placement="top",
+                ),
+            ),
             ui.input_selectize(
                 id="date_picker",
-                label="Show hashtags for date:",
+                label="Show hashtags for time period starting on:",
                 choices=[
                     dt.strftime("%B %d, %Y") for dt in df["timewindow_start"].to_list()
                 ],
@@ -172,7 +181,17 @@ app_ui = ui.page_fluid(
             full_screen=True,
         ),
         ui.card(
-            ui.card_header("Users"),
+            ui.card_header(
+                "Hashtag usage by users ",
+                ui.tooltip(
+                    ui.tags.span(
+                        question_circle_fill,
+                        style="cursor: help; font-size: 14px;",
+                    ),
+                    "Select a user account to show the number of times it used a specific hashtag.",
+                    placement="top",
+                ),
+            ),
             ui.input_selectize(
                 id="hashtag_picker",
                 label="Show users for hashtag:",
@@ -186,7 +205,17 @@ app_ui = ui.page_fluid(
     ),
     ui.hr(),
     ui.card(
-        ui.card_header("Tweets"),
+        ui.card_header(
+            "Tweet Explorer ",
+            ui.tooltip(
+                ui.tags.span(
+                    question_circle_fill,
+                    style="cursor: help; font-size: 14px;",
+                ),
+                "Inspect the posts containing the hashtag for the specific user in the selected time period.",
+                placement="top",
+            ),
+        ),
         ui.input_selectize(
             id="user_picker",
             label="Show tweets for user:",
@@ -317,9 +346,11 @@ def server(input, output, session):
             pl.col(COL_TIME).dt.strftime("%B %d, %Y %I:%M %p")
         )
 
+        df_posts = df_posts.rename({"time": "Post date and time", "text": "Text"})
+
         df_posts = df_posts.drop(pl.col(COL_AUTHOR_ID))
 
-        return render.DataGrid(df_posts, width="100%")
+        return render.DataGrid(df_posts, width="100%", filters=True)
 
 
 app = App(app_ui, server)
