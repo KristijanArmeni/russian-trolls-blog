@@ -14,6 +14,7 @@ DATA_RAW = Path(data_dir, "inputs", "confirmed_russia_troll_tweets.parquet")
 DATA = Path(data_dir, "outputs", "primary_output.parquet")
 
 MANGO_ORANGE2 = "#f3921e"
+LOGO_URL = "https://raw.githubusercontent.com/CIB-Mango-Tree/CIB-Mango-Tree-Website/main/assets/images/mango-text.PNG"
 
 # https://icons.getbootstrap.com/icons/question-circle-fill/
 question_circle_fill = ui.HTML(
@@ -232,9 +233,8 @@ analysis_panel_elements = [
     tweet_explorer,
 ]
 
-LOGO_URL = "https://raw.githubusercontent.com/CIB-Mango-Tree/CIB-Mango-Tree-Website/main/assets/images/mango-text.PNG"
 
-about_text = ui.markdown(f"""
+ABOUT_TEXT = ui.markdown(f"""
 
 <img src="{LOGO_URL}" alt="logo" style="width:200px;"/>
 
@@ -255,7 +255,7 @@ app_ui = ui.page_navbar(
         "About",
         ui.card(
             ui.card_header("About the Mango Tree project"),
-            about_text,
+            ABOUT_TEXT,
             ui.card_footer("PolyForm Noncommercial License 1.0.0"),
         ),
     ),
