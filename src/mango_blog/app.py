@@ -127,103 +127,137 @@ page_dependencies = ui.tags.head(
     ui.tags.style("body { font-family: 'Roboto', sans-serif; }"),
 )
 
-app_ui = ui.page_fluid(
-    page_dependencies,
-    ui.panel_title(ui.h4("Hashtag analysis dashboard")),
-    ui.accordion(
-        ui.accordion_panel(
-            "",
-            [
-                ui.card(
-                    ui.card_header(
-                        "Full time scale analysis ",
-                        ui.tooltip(
-                            ui.tags.span(
-                                question_circle_fill,
-                                style="cursor: help; font-size: 14px;",
-                            ),
-                            "This analysis shows the gini coefficient over the entire dataset. Select specific timepoints below to explore narrow time windows.",
-                            placement="top",
+# main panel showing the line plot
+analysis_panel = ui.accordion(
+    ui.accordion_panel(
+        "",
+        [
+            ui.card(
+                ui.card_header(
+                    "Full time scale analysis ",
+                    ui.tooltip(
+                        ui.tags.span(
+                            question_circle_fill,
+                            style="cursor: help; font-size: 14px;",
                         ),
+                        "This analysis shows the gini coefficient over the entire dataset. Select specific timepoints below to explore narrow time windows.",
+                        placement="top",
                     ),
-                    ui.input_checkbox(
-                        "smooth_checkbox", "Show smoothed line", value=False
-                    ),
-                    output_widget("line_plot", height="300px"),
-                )
-            ],
-        )
+                ),
+                ui.input_checkbox("smooth_checkbox", "Show smoothed line", value=False),
+                output_widget("line_plot", height="300px"),
+            )
+        ],
+    )
+)
+
+# panel to show hashtag distributions
+hashtag_plot_panel = ui.card(
+    ui.card_header(
+        "Most frequently used hashtags ",
+        ui.tooltip(
+            ui.tags.span(
+                question_circle_fill,
+                style="cursor: help; font-size: 14px;",
+            ),
+            "Select a date to display the hashtags that users posted most frequently in the time period starting with that date.",
+            placement="top",
+        ),
     ),
+    ui.input_selectize(
+        id="date_picker",
+        label="Show hashtags for time period starting on:",
+        choices=[dt.strftime("%B %d, %Y") for dt in df["timewindow_start"].to_list()],
+        selected=df["timewindow_start"].first().strftime("%B %d, %Y"),
+        width="100%",
+    ),
+    output_widget("bar_plot", height="1500px"),
+    max_height="500px",
+    full_screen=True,
+)
+
+# panel to show hashtag count per user distribution
+users_plot_panel = ui.card(
+    ui.card_header(
+        "Hashtag usage by users ",
+        ui.tooltip(
+            ui.tags.span(
+                question_circle_fill,
+                style="cursor: help; font-size: 14px;",
+            ),
+            "Select a user account to show the number of times it used a specific hashtag.",
+            placement="top",
+        ),
+    ),
+    ui.input_selectize(
+        id="hashtag_picker",
+        label="Show users for hashtag:",
+        choices=[],
+        width="100%",
+    ),
+    output_widget("user_plot", height="800px"),
+    max_height="500px",
+    full_screen=True,
+)
+
+tweet_explorer = ui.card(
+    ui.card_header(
+        "Tweet Explorer ",
+        ui.tooltip(
+            ui.tags.span(
+                question_circle_fill,
+                style="cursor: help; font-size: 14px;",
+            ),
+            "Inspect the posts containing the hashtag for the specific user in the selected time period.",
+            placement="top",
+        ),
+    ),
+    ui.input_selectize(
+        id="user_picker",
+        label="Show tweets for user:",
+        choices=[],
+        width="100%",
+    ),
+    ui.output_text(id="tweets_title"),
+    ui.output_data_frame("tweets"),
+)
+
+analysis_panel_elements = [
+    page_dependencies,
+    analysis_panel,
     ui.layout_columns(
-        ui.card(
-            ui.card_header(
-                "Most frequently used hashtags ",
-                ui.tooltip(
-                    ui.tags.span(
-                        question_circle_fill,
-                        style="cursor: help; font-size: 14px;",
-                    ),
-                    "Select a date to display the hashtags that users posted most frequently in the time period starting with that date.",
-                    placement="top",
-                ),
-            ),
-            ui.input_selectize(
-                id="date_picker",
-                label="Show hashtags for time period starting on:",
-                choices=[
-                    dt.strftime("%B %d, %Y") for dt in df["timewindow_start"].to_list()
-                ],
-                selected=df["timewindow_start"].first().strftime("%B %d, %Y"),
-                width="100%",
-            ),
-            output_widget("bar_plot", height="1500px"),
-            max_height="500px",
-            full_screen=True,
-        ),
-        ui.card(
-            ui.card_header(
-                "Hashtag usage by users ",
-                ui.tooltip(
-                    ui.tags.span(
-                        question_circle_fill,
-                        style="cursor: help; font-size: 14px;",
-                    ),
-                    "Select a user account to show the number of times it used a specific hashtag.",
-                    placement="top",
-                ),
-            ),
-            ui.input_selectize(
-                id="hashtag_picker",
-                label="Show users for hashtag:",
-                choices=[],
-                width="100%",
-            ),
-            output_widget("user_plot", height="800px"),
-            max_height="500px",
-            full_screen=True,
-        ),
+        hashtag_plot_panel,
+        users_plot_panel,
     ),
-    ui.hr(),
-    ui.card(
-        ui.card_header(
-            "Tweet Explorer ",
-            ui.tooltip(
-                ui.tags.span(
-                    question_circle_fill,
-                    style="cursor: help; font-size: 14px;",
-                ),
-                "Inspect the posts containing the hashtag for the specific user in the selected time period.",
-                placement="top",
-            ),
+    tweet_explorer,
+]
+
+LOGO_URL = "https://raw.githubusercontent.com/CIB-Mango-Tree/CIB-Mango-Tree-Website/main/assets/images/mango-text.PNG"
+
+about_text = ui.markdown(f"""
+
+<img src="{LOGO_URL}" alt="logo" style="width:200px;"/>
+
+CIB Mango Tree, a collaborative and open-source project to develop software that tests for coordinated inauthentic behavior (CIB) in datasets of online activity.
+
+[mangotree.org](https://mangotree.org)
+
+A project of [Civic Tech DC](https://www.civictechdc.org/), our mission is to share methods to uncover how disruptive actors seek to hack our legitimate online discourse regarding health, politics, and society. The CIB Mango Tree presents the most simple tests for CIB first – the low-hanging fruit. These tests are easy to run and interpret. They will reveal signs of unsophisticated CIB. As you move up the Mango Tree, tests become harder and will scavenge for higher-hanging fruit.
+
+
+""")
+app_ui = ui.page_navbar(
+    ui.nav_panel(
+        "Dashboard",
+        analysis_panel_elements,
+    ),
+    ui.nav_panel(
+        "About",
+        ui.card(
+            ui.card_header("About the Mango Tree project"),
+            about_text,
+            ui.card_footer("PolyForm Noncommercial License 1.0.0"),
         ),
-        ui.input_selectize(
-            id="user_picker",
-            label="Show tweets for user:",
-            choices=[],
-            width="100%",
-        ),
-        ui.output_text(id="tweets_title"),
-        ui.output_data_frame("tweets"),
     ),
     title="Hashtag analysis dashboard",
 )
