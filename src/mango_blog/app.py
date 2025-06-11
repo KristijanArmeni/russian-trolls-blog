@@ -3,15 +3,15 @@ from hashtags import secondary_analyzer, COL_AUTHOR_ID, COL_TIME, COL_POST
 from matplotlib import pyplot as plt
 import polars as pl
 import numpy as np
-from dotenv import dotenv_values
 from pathlib import Path
 
 from shiny import App, ui, render, reactive
 from shinywidgets import render_widget, output_widget
 
-data_dir = dotenv_values()["DATA_PATH"]
-DATA_RAW = Path(data_dir, "inputs", "confirmed_russia_troll_tweets.parquet")
-DATA = Path(data_dir, "outputs", "primary_output.parquet")
+PROJECT_ROOT = Path(__file__).parents[2]
+DATA_FOLDER = Path(PROJECT_ROOT, "data")
+DATA_RAW = Path(DATA_FOLDER, "inputs", "confirmed_russia_troll_tweets.parquet")
+DATA = Path(DATA_FOLDER, "inputs", "primary_output.parquet")
 
 MANGO_ORANGE2 = "#f3921e"
 LOGO_URL = "https://raw.githubusercontent.com/CIB-Mango-Tree/CIB-Mango-Tree-Website/main/assets/images/mango-text.PNG"
@@ -243,7 +243,6 @@ CIB Mango Tree, a collaborative and open-source project to develop software that
 [mangotree.org](https://mangotree.org)
 
 A project of [Civic Tech DC](https://www.civictechdc.org/), our mission is to share methods to uncover how disruptive actors seek to hack our legitimate online discourse regarding health, politics, and society. The CIB Mango Tree presents the most simple tests for CIB first – the low-hanging fruit. These tests are easy to run and interpret. They will reveal signs of unsophisticated CIB. As you move up the Mango Tree, tests become harder and will scavenge for higher-hanging fruit.
-
 
 """)
 app_ui = ui.page_navbar(
